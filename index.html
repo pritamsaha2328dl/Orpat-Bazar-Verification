@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orpat Bazar - Secure Verification</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- THEME COLORS --- */
+        :root {
+            --bg-color: #052b18;
+            --card-bg: #0a3d24;
+            --gold-primary: #ffcc00;
+            --gold-dim: #cca300;
+            --text-grey: #b0c4b1;
+            --input-bg: rgba(0, 0, 0, 0.3);
+            --error-red: #ff4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif, Arial, Helvetica; }
+
+        body {
+            background-color: var(--bg-color);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .container { width: 90%; max-width: 380px; text-align: center; position: relative; }
+
+        /* --- LOADING SCREEN --- */
+        #loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .loader-text {
+            color: var(--gold-primary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 900; 
+            text-transform: uppercase;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid var(--gold-dim);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--gold-primary);
+            width: 0%;
+            border-radius: 10px;
+            animation: fillBar 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* --- MAIN CARD --- */
+        .card {
+            background: var(--card-bg);
+            padding: 40px 25px;
+            border-radius: 20px;
+            border: 3px solid var(--gold-dim);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            display: none; 
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+
+        .card.active { display: block; opacity: 1; transform: translateY(0); }
+
+        .logo-icon {
+            font-size: 60px;
+            color: var(--gold-primary);
+            animation: spin 6s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .brand-name {
+            color: var(--gold-primary);
+            font-size: 28px;
+            font-weight: 900; 
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+        }
+
+        .description {
+            color: var(--text-grey);
+            font-size: 14px;
+            font-weight: 600; 
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-main {
+            background: linear-gradient(135deg, var(--gold-dim), var(--gold-primary));
+            color: #052b18;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 900;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(255, 204, 0, 0.25);
+            transition: transform 0.2s;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .btn-main:active { transform: scale(0.96); }
+
+        /* --- INPUT SECTION --- */
+        #otp-section {
+            display: none; 
+            margin-top: 10px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,204,0, 0.3);
+        }
+
+        .input-label {
+            display: block;
+            color: var(--text-grey);
+            font-size: 11px;
+            text-align: left;
+            margin-bottom: 5px;
+            margin-left: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .secure-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background: var(--input-bg);
+            border: 2px solid var(--gold-dim);
+            border-radius: 10px;
+            color: #fff;
+            outline: none;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+        
+        /* OTP Specific Style */
+        .otp-style {
+            text-align: center;
+            letter-spacing: 5px;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--gold-primary);
+        }
+
+        .secure-input:focus { border-color: #fff; box-shadow: 0 0 10px rgba(255, 204, 0, 0.3); }
+
+        .btn-confirm {
+            background: transparent;
+            border: 2px solid var(--gold-primary);
+            color: var(--gold-primary);
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            border-radius: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-confirm:hover { background: var(--gold-primary); color: #052b18; }
+
+        .reset-link {
+            display: block;
+            margin-top: 15px;
+            font-size: 12px;
+            color: var(--text-grey);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .status-msg { margin-top: 25px; font-size: 11px; color: var(--gold-dim); font-weight: 700; opacity: 0.8; }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fillBar { 0% { width: 0%; } 100% { width: 100%; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div id="loading-screen">
+        <div class="loader-text">Verifying Security...</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill"></div>
+        </div>
+    </div>
+
+    <div class="card" id="main-card">
+        <i class="fa-solid fa-gear logo-icon"></i>
+        <h1 class="brand-name">Orpat Bazar</h1>
+        
+        <p class="description">
+            To ensure secure transaction, please verify via Telegram.
+        </p>
+
+        <div id="step-1-container">
+            <button class="btn-main" onclick="openTelegramBot()">
+                <i class="fa-brands fa-telegram" style="margin-right: 8px;"></i> 
+                Get Code on Telegram
+            </button>
+        </div>
+
+        <div id="otp-section">
+            
+            <span class="input-label">Your Telegram Username:</span>
+            <input type="text" id="tg-username" class="secure-input" placeholder="@username">
+
+            <span class="input-label">6-Digit Code:</span>
+            <input type="number" 
+                   id="otp-code" 
+                   class="secure-input otp-style" 
+                   placeholder="000000"
+                   oninput="if(this.value.length > 6) this.value = this.value.slice(0,6);">
+            
+            <button class="btn-confirm" onclick="verifyFinalCode()">Login Now</button>
+            
+            <span class="reset-link" onclick="resetProcess()">Start Over</span>
+        </div>
+
+        <div class="status-msg" id="status-text">
+            Server Load: Optimal <br>
+            <span style="font-size: 10px; opacity: 0.6;">Secure Connection via SSL</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const botNetwork = [
+        "OrpatbazarOTPbot", "OrpatbazarOTP2bot", "OrpatbazarOTP3bot", 
+        "OrpatbazarOTP4bot", "OrpatbazarOTP5bot", "OrpatbazarOTP6bot", "OrpatbazarOTP7bot"
+    ];
+
+    // --- 1. SMART LOAD LOGIC ---
+    window.addEventListener('load', () => {
+        const isVerifying = sessionStorage.getItem('orpat_verifying');
+        if (isVerifying === 'true') {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('main-card').classList.add('active');
+            
+            document.getElementById('step-1-container').style.display = 'none';
+            document.getElementById('otp-section').style.display = 'block';
+            document.getElementById('status-text').innerHTML = "Waiting for Credentials...";
+        } else {
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('main-card').classList.add('active');
+            }, 2500);
+        }
+    });
+
+    // --- 2. OPEN TELEGRAM ---
+    function openTelegramBot() {
+        const uniqueToken = 'user_' + Math.floor(Math.random() * 90000) + 10000;
+        const randomIndex = Math.floor(Math.random() * botNetwork.length);
+        const selectedBot = botNetwork[randomIndex];
+
+        sessionStorage.setItem('orpat_verifying', 'true');
+
+        const telegramLink = `https://t.me/${selectedBot}?start=${uniqueToken}`;
+        window.location.href = telegramLink;
+    }
+
+    // --- 3. RESET ---
+    function resetProcess() {
+        sessionStorage.removeItem('orpat_verifying');
+        location.reload();
+    }
+
+    // --- 4. FINAL VERIFICATION LOGIC ---
+    function verifyFinalCode() {
+        const username = document.getElementById('tg-username').value.trim();
+        const code = document.getElementById('otp-code').value;
+        const statusText = document.getElementById('status-text');
+
+        // Validation 1: Check if empty
+        if(username === "" || code === "") {
+            alert("Error: Please fill in both fields.");
+            return;
+        }
+
+        // Validation 2: Check Code Length (Must be exactly 6)
+        if(code.length !== 6) {
+            alert("Error: The code must be exactly 6 digits.");
+            return;
+        }
+
+        // Validation 3: Username sanity check (Optional)
+        if(username.length < 2) {
+            alert("Error: Invalid Username.");
+            return;
+        }
+
+        // --- SUCCESS SIMULATION ---
+        // Since we don't have a real backend yet, we simulate a check.
+        // In a real app, this is where you verify with your server.
+        
+        statusText.innerHTML = "Verifying with Server...";
+        statusText.style.color = "#ffcc00";
+
+        setTimeout(() => {
+            // Simulated Success
+            sessionStorage.removeItem('orpat_verifying');
+            alert(`✅ Verification Successful!\n\nWelcome, ${username}`);
+            // window.location.href = "/dashboard.html"; // Redirect users here
+        }, 1500);
+    }
+</script>
+
+</body>
+</html>
